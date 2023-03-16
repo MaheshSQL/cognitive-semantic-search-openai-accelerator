@@ -1,0 +1,457 @@
+{
+	"info": {
+		"_postman_id": "145e760c-8f12-46dc-94de-32e217f44b8e",
+		"name": "Azure Cognitive Semantic Search + OpenAI (Github)",
+		"description": "Azure Cognitive Search REST requests.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "POST",
+			"item": [
+				{
+					"name": "2-index Approach with AI Skills + OpenAI Custom Skill",
+					"item": [
+						{
+							"name": "1_CreateSharePointDataSource",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "default"
+									},
+									{
+										"key": "api-key",
+										"value": "{{admin-key}}",
+										"type": "default"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"sharepoint-demo-datasource\",\r\n    \"type\": \"sharepoint\",\r\n    \"credentials\": {\r\n        \"connectionString\": \"SharePointOnlineEndpoint={{SharePointOnlineEndpoint}};ApplicationId={{ApplicationId}};TenantId={{AppRegTenantId}}\"\r\n    },   \r\n\r\n    \"container\" : { \"name\" : \"useQuery\", \"query\" : \"includeLibrariesInSite={{SharePointOnlineEndpoint}}\" }\r\n}"
+								},
+								"url": {
+									"raw": "https://{{AzureCognitiveSearchServiceName}}.search.windows.net/datasources?api-version=2021-04-30-Preview",
+									"protocol": "https",
+									"host": [
+										"{{AzureCognitiveSearchServiceName}}",
+										"search",
+										"windows",
+										"net"
+									],
+									"path": [
+										"datasources"
+									],
+									"query": [
+										{
+											"key": "api-version",
+											"value": "2021-04-30-Preview"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2_CreateIndex1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "default"
+									},
+									{
+										"key": "api-key",
+										"value": "{{admin-key}}",
+										"type": "default"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\" : \"sharepoint-demo-index-1\",    \r\n    \"fields\": [\r\n        { \"name\": \"id\", \"type\": \"Edm.String\", \"key\": true, \"searchable\": false },\r\n        { \"name\": \"metadata_spo_item_name\", \"type\": \"Edm.String\", \"key\": false, \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"metadata_spo_item_path\", \"type\": \"Edm.String\", \"key\": false, \"searchable\": false, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"metadata_spo_item_content_type\", \"type\": \"Edm.String\", \"key\": false, \"searchable\": false, \"filterable\": true, \"sortable\": false, \"facetable\": true },\r\n        { \"name\": \"metadata_spo_item_last_modified\", \"type\": \"Edm.DateTimeOffset\", \"key\": false, \"searchable\": false, \"filterable\": false, \"sortable\": true, \"facetable\": false },\r\n        { \"name\": \"metadata_spo_item_size\", \"type\": \"Edm.Int64\", \"key\": false, \"searchable\": false, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"content\", \"type\": \"Edm.String\", \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"metadata_spo_item_weburi\", \"type\": \"Edm.String\", \"searchable\": false, \"filterable\": false, \"sortable\": false, \"facetable\": false },       \r\n\r\n        { \"name\": \"textItems\", \"type\": \"Collection(Edm.String)\", \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false }\r\n\r\n    ]\r\n}"
+								},
+								"url": {
+									"raw": "https://{{AzureCognitiveSearchServiceName}}.search.windows.net/indexes?api-version=2021-04-30-Preview",
+									"protocol": "https",
+									"host": [
+										"{{AzureCognitiveSearchServiceName}}",
+										"search",
+										"windows",
+										"net"
+									],
+									"path": [
+										"indexes"
+									],
+									"query": [
+										{
+											"key": "api-version",
+											"value": "2021-04-30-Preview"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3_CreateSkillset_Index1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "default"
+									},
+									{
+										"key": "api-key",
+										"value": "{{admin-key}}",
+										"type": "default"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"skillset-sharepoint-demo-index-1\",\r\n    \"description\": \"Skillset to split the document into pages and project to Azure Storage.\",\r\n    \"skills\": [    \r\n    {\r\n            \"@odata.type\": \"#Microsoft.Skills.Vision.OcrSkill\",\r\n            \"name\": \"#1\",\r\n            \"description\": \"Extracts text (plain and structured) from image.\",            \r\n            \"context\": \"/document/normalized_images/*\",\r\n            \"defaultLanguageCode\": null,\r\n            \"detectOrientation\": true,\r\n            \"inputs\": [\r\n                {\r\n                    \"name\": \"image\",\r\n                    \"source\": \"/document/normalized_images/*\"\r\n                }\r\n            ],\r\n            \"outputs\": [\r\n                {\r\n                    \"name\": \"text\",\r\n                    \"targetName\": \"text\"\r\n                }\r\n            ]\r\n    },\r\n\r\n    {\r\n      \"@odata.type\": \"#Microsoft.Skills.Text.MergeSkill\",\r\n      \"description\": \"Create merged_text, which includes all the textual representation of each image inserted at the right location in the content field.\",\r\n      \"name\": \"#2\",\r\n      \"context\": \"/document\",\r\n      \"insertPreTag\": \"--IMG--\",\r\n      \"insertPostTag\": \"--IMG--\",\r\n      \"inputs\": [\r\n        {\r\n          \"name\":\"text\", \r\n          \"source\": \"/document/content\"\r\n        },\r\n        {\r\n          \"name\": \"itemsToInsert\", \r\n          \"source\": \"/document/normalized_images/*/text\"\r\n        },       \r\n        {\r\n          \"name\":\"offsets\", \r\n          \"source\": \"/document/normalized_images/*/contentOffset\" \r\n        }\r\n      ],\r\n      \"outputs\": [\r\n        {\r\n          \"name\": \"mergedText\", \r\n          \"targetName\" : \"mergedText\"\r\n        }\r\n      ]\r\n    },\r\n\r\n    {\r\n        \"@odata.type\": \"#Microsoft.Skills.Text.SplitSkill\",\r\n        \"name\": \"#3\",\r\n        \"textSplitMode\" : \"pages\", \r\n        \"maximumPageLength\": 4000,\r\n        \"defaultLanguageCode\": \"en\",\r\n        \"inputs\": [\r\n            {\r\n                \"name\": \"text\",\r\n                \"source\": \"/document/mergedText\"\r\n            }\r\n\r\n                ],\r\n        \"outputs\": [\r\n            {\r\n                \"name\": \"textItems\",\r\n                \"targetName\": \"textItems\"\r\n            }\r\n                    ]\r\n        },\r\n\r\n        {\r\n        \"@odata.type\": \"#Microsoft.Skills.Util.ShaperSkill\",\r\n        \"context\": \"/document\",\r\n        \"name\": \"#4\",\r\n        \"inputs\": [           \r\n                \r\n                {\r\n                    \"name\": \"textItem\",\r\n                    \"sourceContext\": \"/document/textItems/*\",\r\n                    \"inputs\": [\r\n                        {\r\n                            \"name\": \"metadata_spo_item_content_type\",\r\n                            \"source\": \"/document/metadata_spo_item_content_type\"\r\n                        },\r\n                        {\r\n                            \"name\": \"metadata_spo_item_last_modified\",\r\n                            \"source\": \"/document/metadata_spo_item_last_modified\"\r\n                        },\r\n                        {\r\n                            \"name\": \"metadata_spo_item_size\",\r\n                            \"source\": \"/document/metadata_spo_item_size\"\r\n                        },\r\n                        {\r\n                            \"name\": \"metadata_spo_item_name\",\r\n                            \"source\": \"/document/metadata_spo_item_name\"\r\n                        },\r\n                        {\r\n                            \"name\": \"metadata_spo_item_weburi\",\r\n                            \"source\": \"/document/metadata_spo_item_weburi\"\r\n                        },                       \r\n                        {\r\n                            \"name\": \"page\",\r\n                            \"source\": \"/document/textItems/*\"\r\n                        }\r\n                    ]\r\n                    \r\n                }\r\n            ],\r\n\r\n        \"outputs\": [\r\n            {\r\n                \"name\": \"output\",\r\n                \"targetName\": \"ShaperOutput\"\r\n            }\r\n            ]\r\n        }\r\n\r\n    ],\r\n\r\n    \"knowledgeStore\" : {\r\n    \"storageConnectionString\": \"{{storageConnectionString}}\",\r\n    \"projections\": [\r\n        {\r\n            \"tables\": [ ],\r\n            \"objects\": [\r\n                {\r\n                    \"storageContainer\": \"export\",\r\n                    \"source\": null,\r\n                    \"generatedKeyName\": \"export\",\r\n                    \"sourceContext\": \"/document\",\r\n                    \"inputs\": [\r\n                        {\r\n                            \"name\": \"pages\",\r\n                            \"source\": \"/document/ShaperOutput\"\r\n                        }\r\n                    ]\r\n\r\n                }\r\n            ],\r\n            \"files\": []\r\n        }\r\n    ]\r\n},\r\n\"cognitiveServices\": {\r\n        \"@odata.type\": \"#Microsoft.Azure.Search.CognitiveServicesByKey\",\r\n        \"description\": \"Cog. Service multi-service account\",\r\n        \"key\": \"{{cognitiveMultiServiceAccKey}}\"\r\n    }\r\n}"
+								},
+								"url": {
+									"raw": "https://{{AzureCognitiveSearchServiceName}}.search.windows.net/skillsets?api-version=2021-04-30-Preview",
+									"protocol": "https",
+									"host": [
+										"{{AzureCognitiveSearchServiceName}}",
+										"search",
+										"windows",
+										"net"
+									],
+									"path": [
+										"skillsets"
+									],
+									"query": [
+										{
+											"key": "api-version",
+											"value": "2021-04-30-Preview"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4_CreateIndexer_Index1",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "default"
+									},
+									{
+										"key": "api-key",
+										"value": "{{admin-key}}",
+										"type": "default"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"indexer-sharepoint-demo-index-1\",\r\n    \"dataSourceName\": \"sharepoint-demo-datasource\",\r\n    \"targetIndexName\": \"sharepoint-demo-index-1\",\r\n    \r\n    \"skillsetName\": \"skillset-sharepoint-demo-index-1\",\r\n\r\n    \"parameters\": {\r\n        \"batchSize\": null,\r\n        \"maxFailedItems\": null,\r\n        \"maxFailedItemsPerBatch\": null,\r\n        \"base64EncodeKeys\": null,\r\n        \"configuration\": {\r\n            \"indexedFileNameExtensions\": \".pdf, .docx\",\r\n            \"excludedFileNameExtensions\": \".png, .jpg\",\r\n            \"dataToExtract\": \"contentAndMetadata\",\r\n\r\n            \"imageAction\": \"generateNormalizedImages\"\r\n        }\r\n    },\r\n    \"schedule\": {},\r\n    \"fieldMappings\": [\r\n        {\r\n            \"sourceFieldName\": \"metadata_spo_site_library_item_id\",\r\n            \"targetFieldName\": \"id\",\r\n            \"mappingFunction\": {\r\n                \"name\": \"base64Encode\"\r\n            }\r\n        }\r\n    ],\r\n    \"outputFieldMappings\": []\r\n}"
+								},
+								"url": {
+									"raw": "https://{{AzureCognitiveSearchServiceName}}.search.windows.net/indexers?api-version=2021-04-30-Preview",
+									"protocol": "https",
+									"host": [
+										"{{AzureCognitiveSearchServiceName}}",
+										"search",
+										"windows",
+										"net"
+									],
+									"path": [
+										"indexers"
+									],
+									"query": [
+										{
+											"key": "api-version",
+											"value": "2021-04-30-Preview"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5_CreateADLSGen2Datasource",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "api-key",
+										"value": "{{admin-key}}",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\" : \"adlsgen2-export-datasource\",\n  \"description\" : \"Pointing to knowledge store in Azure Storage.\",\n  \"type\" : \"azureblob\",\n  \"credentials\" :\n  { \"connectionString\" :\n    \"{{storageConnectionString}}\"\n  },\n  \"container\" : { \"name\" : \"export\" }\n}"
+								},
+								"url": {
+									"raw": "https://{{AzureCognitiveSearchServiceName}}.search.windows.net/datasources?api-version=2021-04-30-Preview",
+									"protocol": "https",
+									"host": [
+										"{{AzureCognitiveSearchServiceName}}",
+										"search",
+										"windows",
+										"net"
+									],
+									"path": [
+										"datasources"
+									],
+									"query": [
+										{
+											"key": "api-version",
+											"value": "2021-04-30-Preview"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "6_CreateIndex2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "default"
+									},
+									{
+										"key": "api-key",
+										"value": "{{admin-key}}",
+										"type": "default"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\" : \"sharepoint-demo-index-2\",\r\n    \"fields\": [\r\n\r\n        { \"name\": \"AzureSearch_DocumentKey\", \"type\": \"Edm.String\", \"key\": true, \"searchable\": false },\r\n\r\n        { \"name\": \"metadata_spo_item_name\", \"type\": \"Edm.String\", \"key\": false, \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"metadata_spo_item_content_type\", \"type\": \"Edm.String\", \"key\": false, \"searchable\": false, \"filterable\": true, \"sortable\": false, \"facetable\": true },\r\n        { \"name\": \"metadata_spo_item_last_modified\", \"type\": \"Edm.DateTimeOffset\", \"key\": false, \"searchable\": false, \"filterable\": false, \"sortable\": true, \"facetable\": false },\r\n        { \"name\": \"metadata_spo_item_size\", \"type\": \"Edm.Int64\", \"key\": false, \"searchable\": false, \"filterable\": false, \"sortable\": false, \"facetable\": false },        \r\n        { \"name\": \"metadata_spo_item_weburi\", \"type\": \"Edm.String\", \"searchable\": false, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n\r\n        { \"name\": \"page\", \"type\": \"Edm.String\", \"key\": false, \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n\r\n        { \"name\": \"organizations\", \"type\": \"Collection(Edm.String)\", \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"persons\", \"type\": \"Collection(Edm.String)\", \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"locations\", \"type\": \"Collection(Edm.String)\", \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"keyPhrases\", \"type\": \"Collection(Edm.String)\", \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"ocrText\", \"type\": \"Collection(Edm.String)\", \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false },\r\n        { \"name\": \"summary\", \"type\": \"Edm.String\", \"searchable\": true, \"filterable\": false, \"sortable\": false, \"facetable\": false }\r\n\r\n    ],\r\n    \"semantic\": {\r\n      \"configurations\": [\r\n        {\r\n          \"name\": \"semantic-config-1\",\r\n          \"prioritizedFields\": {\r\n            \"titleField\": {\r\n                  \"fieldName\": \"metadata_spo_item_name\"\r\n                },\r\n            \"prioritizedContentFields\": [\r\n              {\r\n                \"fieldName\": \"page\"\r\n              }\r\n            ],\r\n            \"prioritizedKeywordsFields\": [\r\n                {\r\n                \"fieldName\": \"keyPhrases\"\r\n              }\r\n            ]\r\n          }\r\n        }\r\n      ]\r\n    }\r\n}"
+								},
+								"url": {
+									"raw": "https://{{AzureCognitiveSearchServiceName}}.search.windows.net/indexes?api-version=2021-04-30-Preview",
+									"protocol": "https",
+									"host": [
+										"{{AzureCognitiveSearchServiceName}}",
+										"search",
+										"windows",
+										"net"
+									],
+									"path": [
+										"indexes"
+									],
+									"query": [
+										{
+											"key": "api-version",
+											"value": "2021-04-30-Preview"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "7_CreateSkillset_Index2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "default"
+									},
+									{
+										"key": "api-key",
+										"value": "{{admin-key}}",
+										"type": "default"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"skillset-sharepoint-demo-index-2\",\r\n    \"description\": \"Built-in AI skills.\",\r\n    \"skills\": [\r\n        {\r\n            \"@odata.type\": \"#Microsoft.Skills.Text.V3.EntityRecognitionSkill\",\r\n            \"name\": \"#1\",\r\n            \"context\": \"/document/page\",\r\n            \"categories\": [\r\n                \"Organization\",\r\n                \"Person\",\r\n                \"Location\"\r\n            ],\r\n            \"defaultLanguageCode\": \"en\",\r\n            \"inputs\": [\r\n                {\r\n                    \"name\": \"text\",\r\n                    \"source\": \"/document/page\"\r\n                }\r\n            ],\r\n            \"outputs\": [\r\n                {\r\n                    \"name\": \"organizations\",\r\n                    \"targetName\": \"organizations\"\r\n                },\r\n                {\r\n                    \"name\": \"persons\",\r\n                    \"targetName\": \"persons\"\r\n                },\r\n                {\r\n                    \"name\": \"locations\",\r\n                    \"targetName\": \"locations\"\r\n                }\r\n            ]\r\n        },\r\n\r\n        {\r\n            \"@odata.type\": \"#Microsoft.Skills.Text.KeyPhraseExtractionSkill\",\r\n            \"name\": \"#2\",\r\n            \"context\": \"/document/page\",\r\n            \"inputs\": [\r\n                {\r\n                    \"name\": \"text\",\r\n                    \"source\": \"/document/page\"\r\n                },\r\n                {\r\n                    \"name\": \"languageCode\",\r\n                    \"source\": \"/document/language\"\r\n                }\r\n            ],\r\n            \"outputs\": [\r\n                {\r\n                    \"name\": \"keyPhrases\",\r\n                    \"targetName\": \"keyPhrases\"\r\n                }\r\n            ]\r\n        },\r\n\r\n        {\r\n        \"@odata.type\": \"#Microsoft.Skills.Custom.WebApiSkill\",\r\n        \"name\": \"summary-custom-skill\",\r\n        \"description\": \"Short summary OpenAI generated\",\r\n        \"context\": \"/document/page\",\r\n        \"uri\": \"{{azure_functions_url}}\",\r\n        \"httpMethod\": \"POST\",\r\n        \"timeout\": \"PT30S\",\r\n        \"batchSize\": 1,\r\n        \"degreeOfParallelism\": 1,\r\n        \"inputs\": [\r\n          {\r\n            \"name\": \"text\",\r\n            \"source\": \"/document/page\"\r\n          }\r\n        ],\r\n        \"outputs\": [\r\n          {\r\n            \"name\": \"summary\",\r\n            \"targetName\": \"summary\"\r\n          }\r\n        ],\r\n        \"httpHeaders\": {\r\n          \"x-functions-key\": \"{{azure_function_key}}\"\r\n        }\r\n      }\r\n\r\n        \r\n    ],\r\n\r\n    \"cognitiveServices\": {\r\n        \"@odata.type\": \"#Microsoft.Azure.Search.CognitiveServicesByKey\",\r\n        \"description\": \"Cog. Service multi-service account\",\r\n        \"key\": \"{{cognitiveMultiServiceAccKey}}\"\r\n    }\r\n}"
+								},
+								"url": {
+									"raw": "https://{{AzureCognitiveSearchServiceName}}.search.windows.net/skillsets?api-version=2021-04-30-Preview",
+									"protocol": "https",
+									"host": [
+										"{{AzureCognitiveSearchServiceName}}",
+										"search",
+										"windows",
+										"net"
+									],
+									"path": [
+										"skillsets"
+									],
+									"query": [
+										{
+											"key": "api-version",
+											"value": "2021-04-30-Preview"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "8_CreateIndexer_Index2",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "default"
+									},
+									{
+										"key": "api-key",
+										"value": "{{admin-key}}",
+										"type": "default"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"indexer-sharepoint-demo-index-2\",\r\n    \"dataSourceName\": \"adlsgen2-export-datasource\",\r\n    \"targetIndexName\": \"sharepoint-demo-index-2\",  \r\n    \r\n    \"skillsetName\": \"skillset-sharepoint-demo-index-2\",\r\n\r\n    \"parameters\": {\r\n        \"batchSize\": null,\r\n        \"maxFailedItems\": null,\r\n        \"maxFailedItemsPerBatch\": null,\r\n        \"base64EncodeKeys\": null,\r\n        \"configuration\": {\r\n            \"indexedFileNameExtensions\": \".json\",\r\n            \"excludedFileNameExtensions\": \".png, .jpg\",\r\n            \"dataToExtract\": \"contentAndMetadata\",\r\n\r\n           \"parsingMode\" : \"jsonArray\", \"documentRoot\" : \"/pages/textItem\"\r\n        }\r\n    },\r\n    \"schedule\": {},\r\n    \"fieldMappings\": [\r\n\r\n        {\r\n            \"sourceFieldName\": \"AzureSearch_DocumentKey\",\r\n            \"targetFieldName\": \"AzureSearch_DocumentKey\",\r\n            \"mappingFunction\": {\r\n                \"name\": \"base64Encode\"\r\n        }\r\n        },\r\n        {\r\n        \"sourceFieldName\" : \"/metadata_spo_item_name\",\r\n        \"targetFieldName\": \"metadata_spo_item_name\"\r\n        },\r\n        {\r\n        \"sourceFieldName\" : \"/metadata_spo_item_weburi\",\r\n        \"targetFieldName\": \"metadata_spo_item_weburi\"\r\n        },\r\n        {\r\n        \"sourceFieldName\" : \"/metadata_spo_item_content_type\",\r\n        \"targetFieldName\": \"metadata_spo_item_content_type\"\r\n        },\r\n        {\r\n        \"sourceFieldName\" : \"/metadata_spo_item_last_modified\",\r\n        \"targetFieldName\": \"metadata_spo_item_last_modified\"\r\n        },\r\n        {\r\n        \"sourceFieldName\" : \"/metadata_spo_item_size\",\r\n        \"targetFieldName\": \"metadata_spo_item_size\"\r\n        },\r\n        {\r\n        \"sourceFieldName\" : \"/page\",\r\n        \"targetFieldName\": \"page\"\r\n        }        \r\n        \r\n    ],\r\n    \"outputFieldMappings\": [\r\n        {\r\n        \"sourceFieldName\" : \"/document/page/organizations\",\r\n        \"targetFieldName\": \"organizations\",\r\n        \"mappingFunction\": null\r\n        },\r\n        {\r\n        \"sourceFieldName\" : \"/document/page/persons\",\r\n        \"targetFieldName\": \"persons\",\r\n        \"mappingFunction\": null\r\n        },\r\n        {\r\n        \"sourceFieldName\" : \"/document/page/locations\",\r\n        \"targetFieldName\": \"locations\",\r\n        \"mappingFunction\": null\r\n        },\r\n        {\r\n        \"sourceFieldName\": \"/document/page/keyPhrases\",\r\n        \"targetFieldName\": \"keyPhrases\",\r\n        \"mappingFunction\": null\r\n        },        \r\n        {\r\n\t      \"sourceFieldName\": \"/document/page/summary\",\r\n\t      \"targetFieldName\": \"summary\",\r\n          \"mappingFunction\": null\r\n\t    }\r\n    ]\r\n}"
+								},
+								"url": {
+									"raw": "https://{{AzureCognitiveSearchServiceName}}.search.windows.net/indexers?api-version=2021-04-30-Preview",
+									"protocol": "https",
+									"host": [
+										"{{AzureCognitiveSearchServiceName}}",
+										"search",
+										"windows",
+										"net"
+									],
+									"path": [
+										"indexers"
+									],
+									"query": [
+										{
+											"key": "api-version",
+											"value": "2021-04-30-Preview"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"description": "Create 2 indexes\n\nFirst splits the documents into pages then saves them as JSON arrays to Azure Storage.\n\nSecond index reads from Azure Storage and creates a separate search record for each array element (page) to improve semantic query search!"
+				}
+			]
+		},
+		{
+			"name": "GET",
+			"item": [
+				{
+					"name": "99_QueryIndex",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "default"
+							},
+							{
+								"key": "api-key",
+								"value": "{{admin-key}}",
+								"description": "admin-key or query-key",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "https://{{AzureCognitiveSearchServiceName}}.search.windows.net/indexes/sharepoint-demo-index-2/docs?api-version=2021-04-30-Preview&search=how do you add a bluetooth accessory to a surface device?&queryLanguage=en-US&queryType=semantic&captions=extractive|highlight-true&answers=extractive|count-5&semanticConfiguration=semantic-config-1&$top=5",
+							"protocol": "https",
+							"host": [
+								"{{AzureCognitiveSearchServiceName}}",
+								"search",
+								"windows",
+								"net"
+							],
+							"path": [
+								"indexes",
+								"sharepoint-demo-index-2",
+								"docs"
+							],
+							"query": [
+								{
+									"key": "api-version",
+									"value": "2021-04-30-Preview"
+								},
+								{
+									"key": "search",
+									"value": "how do you add a bluetooth accessory to a surface device?",
+									"description": "Search keyword / question"
+								},
+								{
+									"key": "queryLanguage",
+									"value": "en-US"
+								},
+								{
+									"key": "queryType",
+									"value": "semantic"
+								},
+								{
+									"key": "captions",
+									"value": "extractive|highlight-true"
+								},
+								{
+									"key": "answers",
+									"value": "extractive|count-5"
+								},
+								{
+									"key": "semanticConfiguration",
+									"value": "semantic-config-1"
+								},
+								{
+									"key": "$top",
+									"value": "5"
+								},
+								{
+									"key": "debug",
+									"value": "semantic",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
