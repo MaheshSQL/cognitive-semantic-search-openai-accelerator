@@ -52,6 +52,9 @@ This accelerator utilizes the SharePoint Online (preview) connector to ingest da
 *Azure Function*
 - Azure OpenAI service key
 
+## Looking for OpenAI + Redis Semantic Search Demo?
+- [Azure OpenAI Semantic Search Demo | with Document Upload via UI](https://github.com/MaheshSQL/openai-vector-search-demo)
+
 ## Other important information
 - The connection to SharePoint online (in this setup) uses Device Code authentication.
 - [SharePoint Indexer (Preview)](https://learn.microsoft.com/en-us/azure/search/search-howto-index-sharepoint-online)
